@@ -1,0 +1,12 @@
+// test add sub bump address
+CopyFrom 99
+CopyTo 0
+CopyTo 20
+Bump+ [20]
+Bump+ [20]
+Inbox
+Add [20]
+Outbox
+Inbox
+Sub [20]
+Outbox

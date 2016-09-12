@@ -1,0 +1,8 @@
+// 3±¶Êä³ö
+:begin
+Inbox
+CopyTo 1
+Add 1
+Add 1
+Outbox
+Jump begin

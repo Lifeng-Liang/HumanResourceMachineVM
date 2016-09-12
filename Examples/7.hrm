@@ -1,0 +1,8 @@
+// 将0结尾的串的第一个字符传送到outbox
+:next
+Inbox
+Outbox
+:goon
+Inbox
+JumpIfZero next
+Jump goon

@@ -1,0 +1,8 @@
+// 将所有的0输出到outbox
+:next
+Inbox
+JumpIfZero output
+Jump next
+:output
+Outbox
+Jump next

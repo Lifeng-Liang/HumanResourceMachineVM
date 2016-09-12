@@ -1,0 +1,29 @@
+//3
+CopyFrom 99
+CopyTo 0
+Bump+ 0
+Bump+ 0
+Bump+ 0
+//1
+CopyFrom 99
+CopyTo 1
+Bump+ 1
+//0
+CopyFrom 99
+CopyTo 2
+//6
+CopyFrom 0
+Add 0
+CopyTo 3
+//7
+CopyFrom 1
+Add 0
+Add 0
+CopyTo 4
+// run
+:next
+Inbox
+CopyTo 20
+CopyFrom [20]
+Outbox
+Jump next

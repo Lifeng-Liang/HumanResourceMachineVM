@@ -1,0 +1,27 @@
+//inbox中2项同符号，则输出1，不同符号，则输出0
+// 初始化
+CopyFrom 99
+CopyTo 0
+CopyTo 1
+Bump+ 1
+// main
+:next
+Inbox
+JumpIfNegative x0
+Inbox
+JumpIfNegative x1y0
+// x1y1
+Jump x0y0
+:x0
+Inbox
+JumpIfNegative x0y0
+// x0y1
+Jump x1y0
+:x0y0
+CopyFrom 1
+Outbox
+Jump next
+:x1y0
+CopyFrom 0
+Outbox
+Jump next
