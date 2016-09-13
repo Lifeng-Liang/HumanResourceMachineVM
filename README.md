@@ -7,13 +7,13 @@ More Info about the game please visit : https://tomorrowcorporation.com/humanres
 
 Usage :
 
-	HumanResourceMachineVM srcFile inputFile memFile [/debug]
+	HumanResourceMachineVM srcFile inputFile maxStep memFile [/debug]
 
 Example :
 
-	HumanResourceMachineVM 1.hrm 1.txt c.mem
-	HumanResourceMachineVM 2.hrm 1.txt c.mem
-	HumanResourceMachineVM 7.hrm 7.txt c.mem /debug
+	HumanResourceMachineVM 1.hrm 1.txt c.mem 10000
+	HumanResourceMachineVM 2.hrm 1.txt c.mem 10000
+	HumanResourceMachineVM 7.hrm 7.txt c.mem 10000 /debug
 
 There are some examples in Examples folder.
 

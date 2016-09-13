@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.IO;
 
 namespace HumanResourceMachineVM
@@ -11,16 +12,22 @@ namespace HumanResourceMachineVM
 		public List<string> Input;
 		public List<string> Src;
 		public Dictionary<string, int> Labels;
+		public Dictionary<string, int> Variables;
 		public int CodeIndex;
 		public int StepIndex;
 		public bool Running;
 		public List<string> Log;
+		public int MaxStep;
 
-		public Machine(string srcFile, string inputFile, string memFile)
+		public Machine(string srcFile, string inputFile, string memFile, int maxStep)
 		{
 			Src = Read(srcFile);
 			Input = Read(inputFile);
 			Labels = GetLabels(Src);
+			Variables = GetVariables(Src);
+			int cc = Src.Count(code => code.StartsWith("//"));
+			var codeCount = Src.Count - Labels.Count - Variables.Count - cc;
+			Console.WriteLine($"<Codes : {codeCount}>");
 			var memTemp = Read(memFile);
 			var memList = new List<string>();
 			foreach (var l in memTemp)
@@ -35,6 +42,7 @@ namespace HumanResourceMachineVM
 			Human = null;
 			CodeIndex = 0;
 			Running = true;
+			MaxStep = maxStep;
 			Log = new List<string>();
 		}
 
@@ -42,7 +50,7 @@ namespace HumanResourceMachineVM
 		{
 			int inputIndex = 0;
 			int stepCount = 0;
-			while (Running)
+			while(Running)
 			{
 				if (CodeIndex >= Src.Count)
 				{
@@ -50,7 +58,7 @@ namespace HumanResourceMachineVM
 				}
 				var code = Src[CodeIndex];
 				CodeIndex++;
-				if (code.StartsWith(":") || code.StartsWith("//"))
+				if (code.StartsWith(":") || code.StartsWith("//") || code.StartsWith("="))
 				{
 					continue;
 				}
@@ -104,6 +112,9 @@ namespace HumanResourceMachineVM
 				}
 				Log.Add($"{code}\t// human:{Human},\tcodeIndex:{CodeIndex},\tinputIndex:{inputIndex}");
 				stepCount++;
+				if (stepCount >= MaxStep) {
+					break;
+				}
 			}
 			Console.WriteLine($"<Steps : {stepCount}>");
 		}
@@ -147,18 +158,26 @@ namespace HumanResourceMachineVM
 			if (addr.StartsWith("[") && addr.EndsWith("]"))
 			{
 				var t = addr.Substring(1, addr.Length - 2);
-				t = Mem[int.Parse(t)];
+				t = Mem[GetVarValue(t)];
 				callback(t);
 			}
 			else
 			{
-				callback(addr);
+				callback(GetVarValue(addr).ToString());
 			}
+		}
+
+		private int GetVarValue(string addr)
+		{
+			int n;
+			if (int.TryParse(addr, out n)) {
+				return n;
+			}
+			return Variables[addr];
 		}
 
 		private static Dictionary<string, int> GetLabels(List<string> src)
 		{
-			var codeCount = 0;
 			var labels = new Dictionary<string, int>();
 			for (int i = 0; i < src.Count; i++)
 			{
@@ -167,13 +186,21 @@ namespace HumanResourceMachineVM
 				{
 					labels.Add(code.Substring(1), i);
 				}
-				else if (!code.StartsWith("//"))
-				{
-					codeCount++;
+			}
+			return labels;
+		}
+
+		private static Dictionary<string, int> GetVariables(List<string> src)
+		{
+			var variables = new Dictionary<string, int>();
+			foreach (var code in src) {
+				if (code.StartsWith("=")) {
+					var def = code.Substring(1);
+					var ss = def.Split(new char[]{ ' ' }, 2);
+					variables.Add(ss[0].Trim().ToLower(), int.Parse(ss[1]));
 				}
 			}
-			Console.WriteLine($"<Codes : {codeCount}>");
-			return labels;
+			return variables;
 		}
 
 		private static List<string> Read(string fileName)
@@ -198,14 +225,19 @@ namespace HumanResourceMachineVM
 	{
 		static void Main(string[] args)
 		{
-			if (args.Length < 3 || !File.Exists(args[0]) || !File.Exists(args[1]) || !File.Exists(args[2]))
+			int n;
+			if (args.Length < 4 || !File.Exists(args[0]) || !File.Exists(args[1]) || !File.Exists(args[2]) || !int.TryParse(args[3], out n))
 			{
-				Console.WriteLine("Usage: HumanResourceMachineVM srcFile inputFile memFile [/debug]\nExample: HumanResourceMachineVM 1.hrm 1.txt c.mem /debug");
+				Console.WriteLine("Usage: HumanResourceMachineVM srcFile inputFile memFile maxStep [/debug]\nExample: HumanResourceMachineVM 1.hrm 1.txt c.mem 10000 /debug");
 				return;
 			}
-			var m = new Machine(args[0], args[1], args[2]);
-			m.Run();
-			if (args.Length > 3 && args[3].ToLower() == "/debug")
+			var m = new Machine(args[0], args[1], args[2], n);
+			try {
+				m.Run();
+			} catch (Exception ex) {
+				Console.WriteLine(ex);				
+			}
+			if (args.Length > 4 && args[4].ToLower() == "/debug")
 			{
 				m.PrintLog();
 			}
