@@ -1,5 +1,5 @@
 // test add sub bump address
-=n 20
+@n=20
 CopyFrom 99
 CopyTo 0
 CopyTo n

@@ -21,11 +21,11 @@ namespace HumanResourceMachineVM
 
 		public Machine(string srcFile, string inputFile, string memFile, int maxStep)
 		{
-			Src = Read(srcFile);
+			Src = Read(srcFile, "DEFINE");
 			Input = Read(inputFile);
 			Labels = GetLabels(Src);
 			Variables = GetVariables(Src);
-			int cc = Src.Count(code => code.StartsWith("//"));
+			int cc = Src.Count(code => code.StartsWith("//") || code.StartsWith("--"));
 			var codeCount = Src.Count - Labels.Count - Variables.Count - cc;
 			Console.WriteLine($"<Codes : {codeCount}>");
 			var memTemp = Read(memFile);
@@ -56,13 +56,15 @@ namespace HumanResourceMachineVM
 				{
 					break;
 				}
-				var code = Src[CodeIndex];
+				var code = Src[CodeIndex].Trim();
 				CodeIndex++;
-				if (code.StartsWith(":") || code.StartsWith("//") || code.StartsWith("="))
+				if (code.StartsWith(":") || code.EndsWith(":") 
+					|| code.StartsWith("//") || code.StartsWith("--") || code.StartsWith("@"))
 				{
 					continue;
 				}
 				var ss = code.Split(new[] { ' ' }, 2);
+				var addr = ss.Length == 2 ? ss[1].Trim() : "";
 				switch (ss[0].Trim().ToLower())
 				{
 				case "inbox":
@@ -79,31 +81,35 @@ namespace HumanResourceMachineVM
 					Human = null;
 					break;
 				case "jump":
-					CodeIndex = Labels[ss[1]];
+					CodeIndex = Labels[addr];
 					break;
 				case "jumpifzero":
-					CodeIndex = Jump(ss[1], n => n == 0);
+				case "jumpz":
+					CodeIndex = Jump(addr, n => n == 0);
 					break;
 				case "jumpifnegative":
-					CodeIndex = Jump(ss[1], n => n < 0);
+				case "jumpn":
+					CodeIndex = Jump(addr, n => n < 0);
 					break;
 				case "add":
-					ProcessAddr(ss[1], t => Human = (int.Parse(Human) + int.Parse(Mem[int.Parse(t)])).ToString());
+					ProcessAddr(addr, t => Human = (int.Parse(Human) + int.Parse(Mem[int.Parse(t)])).ToString());
 					break;
 				case "sub":
-					ProcessAddr(ss[1], t => Human = (int.Parse(Human) - int.Parse(Mem[int.Parse(t)])).ToString());
+					ProcessAddr(addr, t => Human = (int.Parse(Human) - int.Parse(Mem[int.Parse(t)])).ToString());
 					break;
 				case "bump+":
-					Human = Bump(ss[1], n => n + 1);
+				case "bumpup":
+					Human = Bump(addr, n => n + 1);
 					break;
 				case "bump-":
-					Human = Bump(ss[1], n => n - 1);
+				case "bumpdn":
+					Human = Bump(addr, n => n - 1);
 					break;
 				case "copyto":
-					ProcessAddr(ss[1], t => Mem[int.Parse(t)] = Human);
+					ProcessAddr(addr, t => Mem[int.Parse(t)] = Human);
 					break;
 				case "copyfrom":
-					ProcessAddr(ss[1], t => Human = Mem[int.Parse(t)]);
+					ProcessAddr(addr, t => Human = Mem[int.Parse(t)]);
 					break;
 				default:
 					Console.WriteLine("<Unknown Code> " + ss[0]);
@@ -181,10 +187,11 @@ namespace HumanResourceMachineVM
 			var labels = new Dictionary<string, int>();
 			for (int i = 0; i < src.Count; i++)
 			{
-				var code = src[i];
-				if (code.StartsWith(":"))
-				{
+				var code = src[i].Trim();
+				if (code.StartsWith(":")) {
 					labels.Add(code.Substring(1), i);
+				} else if (code.EndsWith(":")) {
+					labels.Add(code.Substring(0, code.Length -1), i);
 				}
 			}
 			return labels;
@@ -194,16 +201,16 @@ namespace HumanResourceMachineVM
 		{
 			var variables = new Dictionary<string, int>();
 			foreach (var code in src) {
-				if (code.StartsWith("=")) {
+				if (code.StartsWith("@")) {
 					var def = code.Substring(1);
-					var ss = def.Split(new char[]{ ' ' }, 2);
+					var ss = def.Split(new char[]{ '=' }, 2);
 					variables.Add(ss[0].Trim().ToLower(), int.Parse(ss[1]));
 				}
 			}
 			return variables;
 		}
 
-		private static List<string> Read(string fileName)
+		private static List<string> Read(string fileName, string endMark = null)
 		{
 			var list = new List<string>();
 			using (var r = new StreamReader(new FileStream(fileName, FileMode.Open, FileAccess.Read)))
@@ -211,6 +218,9 @@ namespace HumanResourceMachineVM
 				string line;
 				while ((line = r.ReadLine()) != null)
 				{
+					if (endMark != null && line.StartsWith(endMark)) {
+						break;
+					}
 					if (line != String.Empty)
 					{
 						list.Add(line);
