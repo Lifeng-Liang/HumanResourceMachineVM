@@ -15,6 +15,8 @@ Example :
 	HumanResourceMachineVM 2.hrm 1.txt c.mem 10000
 	HumanResourceMachineVM 7.hrm 7.txt c.mem 10000 /debug
 
+It's written by c# and need .Net Framework 4.0+ or Mono to compile or run.
+
 There are some examples in Examples folder.
 
 The *.hrm file and *.mem file are all text file.
